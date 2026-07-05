@@ -20,7 +20,10 @@ async function getDb() {
 
 const requireAdminAuth = (req, res, next) => {
     const password = req.headers['x-admin-password'] || req.body.password;
-    if (password !== 'kaddulele') {
+    // Uses Vercel Secret. If you forget to add it in Vercel, it defaults back to kaddulele so you don't get locked out.
+    const validPassword = process.env.ADMIN_PASSWORD || 'kaddulele'; 
+    
+    if (password !== validPassword) {
         return res.status(401).json({ error: 'Unauthorized.' });
     }
     next();
