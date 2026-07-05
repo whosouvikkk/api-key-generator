@@ -125,19 +125,33 @@ app.get('/api/:endpoint', async (req, res) => {
         let payload = await targetRes.json();
 
         // SCRUB THE SPECIFIED BRANDING LINE AUTOMATICALLY
+        // SCRUB THE SPECIFIED BRANDING LINE AUTOMATICALLY
         if (payload && typeof payload === 'object') {
-            if (Array.isArray(payload)) {
-                payload.forEach(item => { if (item) delete item.owner; });
-            } else {
-                delete payload.owner;
-            }
-        }
+            // Create a recursive function to deep-scrub the JSON
+            const scrubBranding = (obj) => {
+                if (!obj || typeof obj !== 'object') return;
+                
+                // 1. Delete the fields entirely
+                delete obj.owner;
+                delete obj.by;
+                delete obj.channel;
+                
+                // OPTIONAL: Instead of deleting, you can overwrite them with your own branding!
+                // Uncomment the two lines below to hijack the credit:
+                // obj.by = '@MoonWitch';
+                // obj.channel = 'https://t.me/moonwitchadminbot';
 
-        res.status(targetRes.status).json(payload);
-    } catch (error) {
-        res.status(500).json({ error: 'Proxy communication error.' });
-    }
-});
+                // 2. Recursively check all nested objects and arrays
+                Object.values(obj).forEach(val => {
+                    if (typeof val === 'object') {
+                        scrubBranding(val);
+                    }
+                });
+            };
+
+            // Run the scrubber on the incoming payload
+            scrubBranding(payload);
+        }
 
 if (!process.env.VERCEL) {
     const PORT = process.env.PORT || 3000;
