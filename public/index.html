@@ -3,148 +3,275 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MoonWitch API Dashboard</title>
+    <title>MoonWitch OSINT Engine</title>
     <style>
         :root {
-            --bg-color: #121212;
-            --card-bg: #1e1e1e;
-            --primary: #9b59b6;
-            --primary-hover: #8e44ad;
-            --text-main: #ffffff;
-            --text-muted: #b3b3b3;
-            --border-color: #333333;
+            --bg: #0b0713;
+            --surface: #140f24;
+            --surface-accent: #1d1633;
+            --primary: #9d4edf;
+            --primary-hover: #b57cff;
+            --text: #f3f0f7;
+            --text-muted: #9a8eb8;
+            --border: #2c204d;
+            --danger: #ff5576;
         }
 
         body {
-            background-color: var(--bg-color);
-            color: var(--text-main);
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: system-ui, -apple-system, sans-serif;
             margin: 0;
-            padding: 40px 20px;
-            display: flex;
-            justify-content: center;
+            padding: 0;
+            scroll-behavior: smooth;
         }
 
-        .container { width: 100%; max-width: 800px; }
-        h1 { margin-bottom: 5px; }
-        p { color: var(--text-muted); margin-bottom: 30px; }
-
-        .card {
-            background-color: var(--card-bg);
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            padding: 20px;
-            margin-bottom: 20px;
-        }
-
-        button {
-            background-color: var(--primary);
-            color: white;
-            border: none;
-            padding: 10px 16px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-weight: bold;
-        }
-
-        button:hover { background-color: var(--primary-hover); }
-        button.danger { background-color: #e74c3c; }
-        button.secondary { background-color: transparent; border: 1px solid var(--primary); color: var(--primary); }
-        
-        .key-row {
+        header {
+            background-color: rgba(20, 15, 36, 0.8);
+            border-bottom: 1px solid var(--border);
+            padding: 15px 40px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 15px 0;
-            border-bottom: 1px solid var(--border-color);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(8px);
         }
-        .key-row:last-child { border-bottom: none; }
-        .key-text { font-family: monospace; font-size: 1.1em; color: var(--primary); }
-        .actions { display: flex; gap: 10px; }
-        .empty-state { text-align: center; color: var(--text-muted); padding: 20px 0; }
+
+        .brand { font-size: 1.5rem; font-weight: 800; color: var(--primary); letter-spacing: 1px; }
+        
+        .nav-btn {
+            background: transparent; border: 1px solid var(--primary);
+            color: var(--primary); padding: 8px 16px; border-radius: 6px;
+            cursor: pointer; font-weight: 600; transition: 0.2s ease;
+        }
+        .nav-btn:hover { background: var(--primary); color: white; }
+
+        .layout { max-width: 1100px; margin: 40px auto; padding: 0 20px; }
+
+        /* Admin Management Portal Display Drawer */
+        #admin-panel {
+            display: none;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 40px;
+        }
+
+        .form-group {
+            display: flex; flex-wrap: wrap; gap: 15px; margin-bottom: 20px; align-items: flex-end;
+        }
+
+        .field {
+            display: flex; flex-direction: column; gap: 5px; flex: 1; min-width: 180px;
+        }
+
+        .field label { font-size: 0.85rem; color: var(--text-muted); }
+        
+        input, select {
+            background: var(--bg); border: 1px solid var(--border);
+            color: white; padding: 10px; border-radius: 6px; outline: none;
+        }
+
+        .action-btn {
+            background: var(--primary); color: white; border: none;
+            padding: 10px 20px; border-radius: 6px; font-weight: 600; cursor: pointer;
+        }
+        .action-btn:hover { background: var(--primary-hover); }
+
+        .key-row {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 15px; background: var(--surface-accent); border-radius: 8px;
+            margin-bottom: 10px; border: 1px solid var(--border);
+        }
+
+        .key-info span { display: block; font-size: 0.85rem; color: var(--text-muted); }
+        .key-str { font-family: monospace; font-size: 1.1rem; color: var(--primary); font-weight: 600; }
+
+        /* API Documentation Section Panels */
+        .doc-section { margin-top: 40px; }
+        .doc-card {
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: 10px; padding: 20px; margin-bottom: 20px;
+        }
+
+        .method-badge {
+            background: #2563eb; color: white; padding: 3px 8px;
+            border-radius: 4px; font-size: 0.75rem; font-weight: 700; margin-right: 10px;
+        }
+
+        .endpoint-path { font-family: monospace; font-size: 1.1rem; color: #f3f0f7; }
+        
+        .code-block {
+            background: var(--bg); border: 1px solid var(--border);
+            padding: 15px; border-radius: 6px; font-family: monospace;
+            overflow-x: auto; color: #a78bfa; margin-top: 10px;
+        }
+
+        .btn-danger { background: var(--danger); color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; }
+        .btn-sec { background: transparent; border: 1px solid var(--border); color: var(--text); padding: 6px 12px; border-radius: 4px; cursor: pointer; margin-right: 5px; }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <h1>MoonWitch OSINT</h1>
-    <p>API Key Management Dashboard (Local Host)</p>
+<header>
+    <div class="brand">🌙 MoonWitch OSINT</div>
+    <button class="nav-btn" onclick="toggleAdminPanel()">Console Dashboard</button>
+</header>
 
-    <div class="card">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-            <h2 style="margin: 0;">Active Keys</h2>
-            <button onclick="generateKey()">+ Generate New Key</button>
+<div class="layout">
+    
+    <div id="admin-panel">
+        <h2 style="margin-top:0;">Access Token Provisioning Console</h2>
+        <div class="form-group">
+            <div class="field">
+                <label>Identifier Label</label>
+                <input type="text" id="key-label" placeholder="e.g., Client Custom Profile">
+            </div>
+            <div class="field">
+                <label>Scope Restriction Rule</label>
+                <select id="key-scope">
+                    <option value="all">Unrestricted Scope (All Endpoints)</option>
+                    <option value="number">Phone Resolver Only</option>
+                    <option value="aadhar">Aadhaar Verification Only</option>
+                    <option value="upi">UPI Vector Lookup Only</option>
+                    <option value="pan">PAN Registry Search Only</option>
+                    <option value="veh2num">Vehicle to Mobile Mapping Only</option>
+                    <option value="vehicle">General Vehicle Registry Only</option>
+                    <option value="tg">Telegram Target Intelligence Only</option>
+                </select>
+            </div>
+            <div class="field">
+                <label>Expiration Ceiling</label>
+                <input type="date" id="key-expiry">
+            </div>
+            <button class="action-btn" onclick="createNewKey()">Provision Token</button>
         </div>
 
-        <div id="keys-container">
-            <div class="empty-state">Loading keys...</div>
+        <div id="keys-list-target">
+            <div style="color:var(--text-muted); text-align:center; padding:20px;">Queries resolving state vectors...</div>
+        </div>
+    </div>
+
+    <div class="doc-section">
+        <h2>Developer Interface Documentation Reference</h2>
+        <p style="color:var(--text-muted); margin-bottom:30px;">All outbound structural data request payloads map via standard HTTP GET queries utilizing standard MoonWitch cryptotokens.</p>
+
+        <div class="doc-card">
+            <h3><span class="method-badge">GET</span><span class="endpoint-path">/api/number</span></h3>
+            <p>Resolves structural carrier routing metadata relative to cellular values.</p>
+            <div><strong>Required parameters:</strong> <code>key</code>, <code>num</code></div>
+            <div class="code-block">https://meow-delta-liard.vercel.app/api/number?key=moonwitch_SAMPLETOKEN&num=9876543210</div>
+        </div>
+
+        <div class="doc-card">
+            <h3><span class="method-badge">GET</span><span class="endpoint-path">/api/aadhar</span></h3>
+            <p>Resolves public records mapping vectors regarding verification indices.</p>
+            <div><strong>Required parameters:</strong> <code>key</code>, <code>num</code></div>
+            <div class="code-block">https://meow-delta-liard.vercel.app/api/aadhar?key=moonwitch_SAMPLETOKEN&num=123456789012</div>
+        </div>
+
+        <div class="doc-card">
+            <h3><span class="method-badge">GET</span><span class="endpoint-path">/api/upi</span></h3>
+            <p>Validates account designations tied to Virtual Payment Address handles.</p>
+            <div><strong>Required parameters:</strong> <code>key</code>, <code>upi</code></div>
+            <div class="code-block">https://meow-delta-liard.vercel.app/api/upi?key=moonwitch_SAMPLETOKEN&upi=example@ybl</div>
+        </div>
+
+        <div class="doc-card">
+            <h3><span class="method-badge">GET</span><span class="endpoint-path">/api/pan</span></h3>
+            <p>Queries permanent tracking file associations via index registries.</p>
+            <div><strong>Required parameters:</strong> <code>key</code>, <code>pan</code></div>
+            <div class="code-block">https://meow-delta-liard.vercel.app/api/pan?key=moonwitch_SAMPLETOKEN&pan=AXDPR2606K</div>
+        </div>
+
+        <div class="doc-card">
+            <h3><span class="method-badge">GET</span><span class="endpoint-path">/api/veh2num</span></h3>
+            <p>Converts public registration keys back into standard linked cellular contacts.</p>
+            <div><strong>Required parameters:</strong> <code>key</code>, <code>vehicle</code></div>
+            <div class="code-block">https://meow-delta-liard.vercel.app/api/veh2num?key=moonwitch_SAMPLETOKEN&vehicle=KL41V3504</div>
+        </div>
+
+        <div class="doc-card">
+            <h3><span class="method-badge">GET</span><span class="endpoint-path">/api/vehicle</span></h3>
+            <p>Resolves system information ownership, structural registration and state details.</p>
+            <div><strong>Required parameters:</strong> <code>key</code>, <code>vehicle</code></div>
+            <div class="code-block">https://meow-delta-liard.vercel.app/api/vehicle?key=moonwitch_SAMPLETOKEN&vehicle=KA01AB1234</div>
+        </div>
+
+        <div class="doc-card">
+            <h3><span class="method-badge">GET</span><span class="endpoint-path">/api/tg</span></h3>
+            <p>Extracts identifier states across decentralized handle networks.</p>
+            <div><strong>Required parameters:</strong> <code>key</code>, and one of: <code>info</code>, <code>id</code>, <code>username</code></div>
+            <div class="code-block">https://meow-delta-liard.vercel.app/api/tg?key=moonwitch_SAMPLETOKEN&info=@ll_ADMIN_MODZ_THE_GOD_ENTERS_ll</div>
         </div>
     </div>
 </div>
 
 <script>
-    async function fetchKeys() {
+    function toggleAdminPanel() {
+        const panel = document.getElementById('admin-panel');
+        const show = panel.style.display !== 'block';
+        panel.style.display = show ? 'block' : 'none';
+        if (show) syncKeys();
+    }
+
+    async function syncKeys() {
         try {
-            const response = await fetch('/api/admin/keys');
-            if (!response.ok) throw new Error('Network response was not ok');
-            const keys = await response.json();
-            renderKeys(keys);
-        } catch (error) {
-            console.error("Failed to load keys", error);
-            document.getElementById('keys-container').innerHTML = 
-                '<div class="empty-state" style="color: #e74c3c;">Failed to connect to backend. Is the server running?</div>';
+            const res = await fetch('/api/admin/keys');
+            const data = await res.json();
+            const box = document.getElementById('keys-list-target');
+            box.innerHTML = '';
+
+            if(data.length === 0) {
+                box.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:20px;">Zero active tokens provisioned inside MongoDB instance.</div>';
+                return;
+            }
+
+            data.forEach(item => {
+                const row = document.createElement('div');
+                row.className = 'key-row';
+                row.innerHTML = `
+                    <div class="key-info">
+                        <div class="key-str">${item.key}</div>
+                        <span>Tag: <strong>${item.label}</strong> | Path Rule: <code>${item.allowedLookup}</code> | Exp: ${item.expiresAt ? new Date(item.expiresAt).toLocaleDateString() : 'Never'}</span>
+                    </div>
+                    <div>
+                        <button class="btn-sec" onclick="navigator.clipboard.writeText('${item.key}');alert('Copied token to clipboard');">Copy</button>
+                        <button class="btn-danger" onclick="revokeKey('${item.key}')">Revoke</button>
+                    </div>
+                `;
+                box.appendChild(row);
+            });
+        } catch(e) {
+            console.error(e);
         }
     }
 
-    function renderKeys(keys) {
-        const container = document.getElementById('keys-container');
-        container.innerHTML = ''; 
+    async function createNewKey() {
+        const label = document.getElementById('key-label').value;
+        const allowedLookup = document.getElementById('key-scope').value;
+        const expiresAt = document.getElementById('key-expiry').value;
 
-        if (keys.length === 0) {
-            container.innerHTML = '<div class="empty-state">No API keys found. Generate one to get started.</div>';
-            return;
-        }
-
-        keys.forEach(key => {
-            const row = document.createElement('div');
-            row.className = 'key-row';
-            row.innerHTML = `
-                <span class="key-text">${key}</span>
-                <div class="actions">
-                    <button class="secondary" onclick="copyToClipboard('${key}')">Copy</button>
-                    <button class="secondary" onclick="regenerateKey('${key}')">Regenerate</button>
-                    <button class="danger" onclick="deleteKey('${key}')">Delete</button>
-                </div>
-            `;
-            container.appendChild(row);
+        await fetch('/api/admin/keys', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ label, allowedLookup, expiresAt })
         });
+        
+        document.getElementById('key-label').value = '';
+        document.getElementById('key-expiry').value = '';
+        syncKeys();
     }
 
-    async function generateKey() {
-        await fetch('/api/admin/keys', { method: 'POST' });
-        fetchKeys();
-    }
-
-    async function deleteKey(key) {
-        if(confirm('Are you sure you want to delete this key?')) {
-            await fetch(`/api/admin/keys/${key}`, { method: 'DELETE' });
-            fetchKeys();
+    async function revokeKey(targetKey) {
+        if(confirm('Revoke authorization token immediately?')) {
+            await fetch(`/api/admin/keys/${targetKey}`, { method: 'DELETE' });
+            syncKeys();
         }
     }
-
-    async function regenerateKey(oldKey) {
-        if(confirm('Regenerating will invalidate the old key. Continue?')) {
-            await fetch(`/api/admin/keys/${oldKey}`, { method: 'PUT' });
-            fetchKeys();
-        }
-    }
-
-    function copyToClipboard(text) {
-        navigator.clipboard.writeText(text);
-        alert('Copied to clipboard: ' + text);
-    }
-
-    fetchKeys();
 </script>
 </body>
 </html>
