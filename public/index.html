@@ -3,280 +3,305 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MoonWitch Admin Console</title>
+    <title>MoonWitch OSINT Engine</title>
     <style>
         :root {
-            --bg-base: #0B0715;
-            --bg-panel: #130D26;
-            --bg-hover: #1A1333;
-            --border-color: #2A1F4C;
-            --primary: #8B5CF6;
-            --primary-hover: #A78BFA;
-            --danger: #EF4444;
+            --bg-base: #07040f;
+            --bg-panel: #110a1f;
+            --bg-hover: #1a102f;
+            --border-color: #261642;
+            --primary: #9d4edf;
+            --primary-hover: #b57cff;
+            --danger: #ef4444;
             --danger-bg: rgba(239, 68, 68, 0.1);
-            --text-main: #F8FAFC;
-            --text-muted: #94A3B8;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
             --font-family: 'Inter', system-ui, -apple-system, sans-serif;
         }
 
         body {
             margin: 0; padding: 0;
-            background-color: var(--bg-base);
-            color: var(--text-main);
+            background-color: var(--bg-base); color: var(--text-main);
             font-family: var(--font-family);
-            display: flex; height: 100vh; overflow: hidden;
+            background-image: radial-gradient(circle at top right, rgba(157, 78, 223, 0.08), transparent 40%),
+                              radial-gradient(circle at bottom left, rgba(157, 78, 223, 0.05), transparent 40%);
+            background-attachment: fixed; min-height: 100vh;
         }
 
-        /* --- AUTHENTICATION GATE --- */
-        #auth-gate {
-            position: fixed; inset: 0;
-            background: rgba(11, 7, 21, 0.85);
-            backdrop-filter: blur(12px);
-            display: flex; align-items: center; justify-content: center;
-            z-index: 9999;
+        /* --- GLOBAL COMPONENTS --- */
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), #6D28D9); color: white;
+            border: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer;
+            transition: all 0.3s ease; display: inline-flex; align-items: center; gap: 8px;
+        }
+        .btn-primary:hover { box-shadow: 0 0 20px rgba(157, 78, 223, 0.4); transform: translateY(-1px); }
+
+        /* --- LANDING PAGE VIEW --- */
+        #landing-view { display: block; }
+        
+        .navbar {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 20px 5%; border-bottom: 1px solid var(--border-color);
+            background: rgba(7, 4, 15, 0.8); backdrop-filter: blur(12px);
+            position: sticky; top: 0; z-index: 100;
+        }
+        .brand { font-size: 1.5rem; font-weight: 800; display: flex; align-items: center; gap: 10px; }
+        .brand svg { width: 28px; height: 28px; color: var(--primary); }
+
+        .hero { text-align: center; padding: 80px 20px; max-width: 800px; margin: 0 auto; }
+        .hero h1 { font-size: 3.5rem; margin-bottom: 20px; line-height: 1.2; letter-spacing: -1px; }
+        .hero h1 span { background: linear-gradient(to right, #b57cff, #9d4edf); -webkit-background-clip: text; color: transparent; }
+        .hero p { font-size: 1.2rem; color: var(--text-muted); margin-bottom: 40px; line-height: 1.6; }
+
+        .api-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 24px; padding: 0 5% 80px 5%; max-width: 1200px; margin: 0 auto;
+        }
+        .api-card {
+            background: rgba(17, 10, 31, 0.6); border: 1px solid var(--border-color);
+            border-radius: 16px; padding: 25px; backdrop-filter: blur(10px);
+            transition: transform 0.2s, border-color 0.2s;
+        }
+        .api-card:hover { transform: translateY(-5px); border-color: var(--primary); }
+        .api-badge { display: inline-block; background: rgba(157, 78, 223, 0.15); color: var(--primary-hover); padding: 4px 10px; border-radius: 20px; font-size: 0.8rem; font-weight: 700; margin-bottom: 15px; }
+        .api-title { font-size: 1.2rem; font-weight: 700; margin: 0 0 10px 0; }
+        .api-desc { color: var(--text-muted); font-size: 0.95rem; margin-bottom: 20px; }
+        .api-code {
+            background: #000; border: 1px solid #222; padding: 12px; border-radius: 8px;
+            font-family: monospace; color: #a78bfa; font-size: 0.85rem; overflow-x: auto;
+        }
+
+        /* --- AUTH MODAL --- */
+        #auth-modal {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(8px);
+            display: none; align-items: center; justify-content: center; z-index: 1000;
         }
         .auth-box {
-            background: var(--bg-panel);
-            border: 1px solid var(--border-color);
-            padding: 40px; border-radius: 16px;
-            width: 100%; max-width: 380px;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-            text-align: center;
+            background: var(--bg-panel); border: 1px solid var(--primary);
+            padding: 40px; border-radius: 16px; width: 100%; max-width: 350px; text-align: center;
+            box-shadow: 0 0 40px rgba(157, 78, 223, 0.2);
         }
-        .auth-box h2 { margin: 0 0 10px 0; font-size: 1.5rem; font-weight: 700; color: white; }
-        .auth-box p { color: var(--text-muted); font-size: 0.9rem; margin-bottom: 30px; }
         .auth-input {
-            width: 100%; padding: 14px; box-sizing: border-box;
-            background: var(--bg-base); border: 1px solid var(--border-color);
-            color: white; border-radius: 8px; margin-bottom: 20px;
-            text-align: center; font-size: 1rem; letter-spacing: 2px;
-            transition: all 0.3s ease;
+            width: 100%; padding: 14px; box-sizing: border-box; background: var(--bg-base);
+            border: 1px solid var(--border-color); color: white; border-radius: 8px; margin: 20px 0;
+            text-align: center; font-size: 1rem;
         }
-        .auth-input:focus { border-color: var(--primary); outline: none; box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.2); }
-        .btn-glow {
-            width: 100%; padding: 14px;
-            background: linear-gradient(135deg, var(--primary), #6D28D9);
-            color: white; border: none; border-radius: 8px;
-            font-size: 1rem; font-weight: 600; cursor: pointer;
-            transition: all 0.3s ease;
-        }
-        .btn-glow:hover { box-shadow: 0 0 20px rgba(139, 92, 246, 0.4); transform: translateY(-1px); }
+        .auth-input:focus { border-color: var(--primary); outline: none; }
 
-        /* --- SIDEBAR --- */
+        /* --- ADMIN DASHBOARD VIEW --- */
+        #admin-view { display: none; height: 100vh; overflow: hidden; }
+        
+        .admin-layout { display: flex; height: 100%; }
         .sidebar {
-            width: 280px; background: var(--bg-panel);
-            border-right: 1px solid var(--border-color);
-            display: flex; flex-direction: column; padding: 24px 16px;
-            box-sizing: border-box;
+            width: 260px; background: var(--bg-panel); border-right: 1px solid var(--border-color);
+            display: flex; flex-direction: column; padding: 20px; box-sizing: border-box;
         }
-        .brand {
-            display: flex; align-items: center; gap: 12px;
-            padding: 0 12px 30px 12px; margin-bottom: 10px;
-            border-bottom: 1px solid var(--border-color);
-        }
-        .brand svg { width: 28px; height: 28px; color: var(--primary); }
-        .brand-text { font-size: 1.25rem; font-weight: 800; letter-spacing: 0.5px; }
-        .brand-text span { color: var(--primary); }
-
-        .nav-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 6px; }
         .nav-item {
-            display: flex; align-items: center; gap: 14px;
-            padding: 14px 16px; border-radius: 10px;
-            color: var(--text-muted); cursor: pointer;
-            font-weight: 600; font-size: 0.95rem;
-            transition: all 0.2s ease;
+            display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: 10px;
+            color: var(--text-muted); cursor: pointer; font-weight: 600; transition: all 0.2s ease; margin-bottom: 8px;
         }
-        .nav-item svg { width: 20px; height: 20px; opacity: 0.7; }
-        .nav-item:hover { background: var(--bg-hover); color: white; }
-        .nav-item.active { background: linear-gradient(90deg, rgba(139, 92, 246, 0.15), transparent); color: var(--primary); border-left: 3px solid var(--primary); }
-        .nav-item.active svg { opacity: 1; color: var(--primary); }
-        
-        .spacer { flex-grow: 1; }
-        .nav-item.logout:hover { background: var(--danger-bg); color: var(--danger); }
-        .nav-item.logout:hover svg { color: var(--danger); opacity: 1; }
+        .nav-item.active { background: rgba(157, 78, 223, 0.1); color: var(--primary); border-left: 3px solid var(--primary); }
+        .nav-item:hover:not(.active) { background: var(--bg-hover); color: white; }
+        .nav-item.logout { margin-top: auto; color: var(--danger); }
+        .nav-item.logout:hover { background: var(--danger-bg); }
 
-        /* --- MAIN WORKSPACE --- */
-        .main-content {
-            flex-grow: 1; background: var(--bg-base);
-            padding: 40px; overflow-y: auto;
-        }
+        .admin-content { flex-grow: 1; padding: 40px; overflow-y: auto; }
         
-        .header-top { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 40px; }
-        .header-title h1 { margin: 0 0 8px 0; font-size: 2rem; font-weight: 700; }
-        .header-title p { margin: 0; color: var(--text-muted); font-size: 1rem; }
-
-        /* Generator Panel */
-        .generator-panel {
-            background: var(--bg-panel); border: 1px solid var(--border-color);
-            padding: 24px; border-radius: 16px; margin-bottom: 40px;
-            display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px; align-items: end;
-        }
-        .input-group { display: flex; flex-direction: column; gap: 8px; }
-        .input-group label { font-size: 0.8rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+        /* Dashboard Forms & Tables */
+        .panel { background: var(--bg-panel); border: 1px solid var(--border-color); padding: 24px; border-radius: 16px; margin-bottom: 30px; }
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; align-items: end; }
+        .input-group label { display: block; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 1px; }
         .input-group input, .input-group select {
-            background: var(--bg-base); border: 1px solid var(--border-color);
-            color: white; padding: 12px 16px; border-radius: 8px; font-size: 0.95rem;
-            outline: none; transition: border 0.2s;
+            width: 100%; padding: 12px; box-sizing: border-box; background: var(--bg-base);
+            border: 1px solid var(--border-color); color: white; border-radius: 8px; outline: none;
         }
         .input-group input:focus, .input-group select:focus { border-color: var(--primary); }
         
-        /* Data Table */
-        .table-container {
-            background: var(--bg-panel); border: 1px solid var(--border-color);
-            border-radius: 16px; overflow: hidden;
-        }
         table { width: 100%; border-collapse: collapse; text-align: left; }
-        th { 
-            padding: 18px 24px; background: rgba(0,0,0,0.2); 
-            color: var(--text-muted); font-size: 0.85rem; font-weight: 600; 
-            text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid var(--border-color);
-        }
-        td { padding: 18px 24px; border-bottom: 1px solid var(--border-color); font-size: 0.95rem; vertical-align: middle; }
-        tr:last-child td { border-bottom: none; }
-        tr:hover { background: rgba(255, 255, 255, 0.02); }
-
-        .badge-key { 
-            background: rgba(139, 92, 246, 0.1); color: var(--primary-hover); 
-            padding: 6px 12px; border-radius: 6px; font-family: monospace; font-size: 1rem; border: 1px solid rgba(139, 92, 246, 0.2);
-        }
-        .badge-scope {
-            background: var(--bg-base); color: var(--text-muted);
-            padding: 4px 10px; border-radius: 20px; font-size: 0.85rem; border: 1px solid var(--border-color);
-        }
-
-        .actions { display: flex; gap: 8px; justify-content: flex-end; }
-        .btn-icon {
-            background: transparent; border: 1px solid var(--border-color);
-            color: var(--text-muted); width: 36px; height: 36px; border-radius: 8px;
-            display: flex; align-items: center; justify-content: center; cursor: pointer;
-            transition: all 0.2s;
-        }
-        .btn-icon:hover { background: var(--bg-hover); color: white; border-color: var(--text-main); }
-        .btn-icon.delete:hover { background: var(--danger-bg); color: var(--danger); border-color: var(--danger); }
-        .btn-icon svg { width: 16px; height: 16px; }
-
+        th { padding: 16px; border-bottom: 1px solid var(--border-color); color: var(--text-muted); font-size: 0.85rem; text-transform: uppercase; }
+        td { padding: 16px; border-bottom: 1px solid var(--border-color); vertical-align: middle; }
+        .token-str { font-family: monospace; color: var(--primary-hover); background: rgba(157, 78, 223, 0.1); padding: 4px 8px; border-radius: 6px; }
+        .btn-delete { background: var(--danger-bg); color: var(--danger); border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: 600; }
+        .btn-delete:hover { background: var(--danger); color: white; }
+        .btn-copy { background: transparent; border: 1px solid var(--border-color); color: white; padding: 6px 12px; border-radius: 6px; cursor: pointer; }
     </style>
 </head>
 <body>
 
-    <div id="auth-gate">
+    <!-- ================= LANDING PAGE ================= -->
+    <div id="landing-view">
+        <nav class="navbar">
+            <div class="brand">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                MoonWitch
+            </div>
+            <button class="btn-primary" onclick="showAuthModal()">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                Admin Console
+            </button>
+        </nav>
+
+        <div class="hero">
+            <h1>Next-Generation <span>OSINT</span> API Gateway</h1>
+            <p>Secure, ultra-fast, and deeply integrated API routing infrastructure. Manage access, proxy requests seamlessly, and sanitize data responses automatically.</p>
+            <a href="#docs" class="btn-primary" style="padding: 14px 28px; font-size: 1.1rem;">Explore Documentation</a>
+        </div>
+
+        <div id="docs" class="api-grid">
+            <div class="api-card">
+                <div class="api-badge">GET /api/number</div>
+                <h3 class="api-title">Phone Number Lookup</h3>
+                <p class="api-desc">Resolves identity registry vectors relative to active target phone nodes.</p>
+                <div class="api-code">?key=YOUR_KEY&num=9876543210</div>
+            </div>
+            <div class="api-card">
+                <div class="api-badge">GET /api/aadhar</div>
+                <h3 class="api-title">Aadhaar Data Matrix</h3>
+                <p class="api-desc">Performs checks against demographic identification reference indices.</p>
+                <div class="api-code">?key=YOUR_KEY&num=123456789012</div>
+            </div>
+            <div class="api-card">
+                <div class="api-badge">GET /api/upi</div>
+                <h3 class="api-title">UPI Vector Identity</h3>
+                <p class="api-desc">Validates account profiles registered to Virtual Payment Address parameters.</p>
+                <div class="api-code">?key=YOUR_KEY&upi=example@ybl</div>
+            </div>
+            <div class="api-card">
+                <div class="api-badge">GET /api/pan</div>
+                <h3 class="api-title">PAN Central Registry</h3>
+                <p class="api-desc">Resolves details relative to registered tracking card configurations.</p>
+                <div class="api-code">?key=YOUR_KEY&pan=AXDPR2606K</div>
+            </div>
+            <div class="api-card">
+                <div class="api-badge">GET /api/veh2num</div>
+                <h3 class="api-title">Vehicle to Mobile</h3>
+                <p class="api-desc">Cross-references mobile data traces matching target vehicle strings.</p>
+                <div class="api-code">?key=YOUR_KEY&vehicle=KL41V3504</div>
+            </div>
+            <div class="api-card">
+                <div class="api-badge">GET /api/tg</div>
+                <h3 class="api-title">Telegram Intelligence</h3>
+                <p class="api-desc">Fetches information regarding decentralized user network records.</p>
+                <div class="api-code">?key=YOUR_KEY&info=@target_user</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= AUTHENTICATION MODAL ================= -->
+    <div id="auth-modal">
         <div class="auth-box">
-            <h2>System Secure Lock</h2>
-            <p>Establish terminal connection to proceed.</p>
-            <input type="password" id="auth-password" class="auth-input" placeholder="Enter Token" onkeypress="handleEnter(event)">
-            <button class="btn-glow" onclick="login()">Initialize Session</button>
+            <h2 style="margin:0 0 10px 0;">Restricted Access</h2>
+            <p style="color:var(--text-muted); font-size:0.9rem; margin-bottom:20px;">Provide terminal authorization token.</p>
+            <input type="password" id="auth-pass" class="auth-input" placeholder="Password" onkeypress="if(event.key === 'Enter') attemptLogin()">
+            <div style="display:flex; gap:10px;">
+                <button class="btn-primary" style="flex:1; justify-content:center;" onclick="attemptLogin()">Unlock</button>
+                <button class="btn-primary" style="flex:1; justify-content:center; background:transparent; border:1px solid var(--border-color);" onclick="hideAuthModal()">Cancel</button>
+            </div>
         </div>
     </div>
 
-    <div class="sidebar">
-        <div class="brand">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-            <div class="brand-text">Admin <span>Command</span></div>
-        </div>
-        <ul class="nav-list">
-            <li class="nav-item">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
-                Overview
-            </li>
-            <li class="nav-item active">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
-                Key Management
-            </li>
-            <li class="nav-item">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path></svg>
-                Services Config
-            </li>
-            <div class="spacer"></div>
-            <li class="nav-item logout" onclick="logout()">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
-                Exit Admin
-            </li>
-        </ul>
-    </div>
+    <!-- ================= ADMIN DASHBOARD ================= -->
+    <div id="admin-view">
+        <div class="admin-layout">
+            <div class="sidebar">
+                <div class="brand" style="margin-bottom:30px; padding-bottom:20px; border-bottom:1px solid var(--border-color);">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                    Admin Console
+                </div>
+                <div class="nav-item active">User Management</div>
+                <div class="nav-item">System Logs</div>
+                <div class="nav-item logout" onclick="logout()">Exit Dashboard</div>
+            </div>
 
-    <div class="main-content">
-        
-        <div class="header-top">
-            <div class="header-title">
-                <h1>Token Management</h1>
-                <p id="total-keys-text">Total Active Keys: 0</p>
+            <div class="admin-content">
+                <div style="margin-bottom:30px;">
+                    <h1 style="margin:0 0 5px 0;">Token Management</h1>
+                    <p style="margin:0; color:var(--text-muted);" id="key-count">Total Active Keys: 0</p>
+                </div>
+
+                <!-- Generator Form -->
+                <div class="panel">
+                    <div class="form-grid">
+                        <div class="input-group">
+                            <label>Client Label</label>
+                            <input type="text" id="k-label" placeholder="e.g. Premium User">
+                        </div>
+                        <div class="input-group">
+                            <label>Custom Alias (Optional)</label>
+                            <input type="text" id="k-custom" placeholder="Auto-generates if empty">
+                        </div>
+                        <div class="input-group">
+                            <label>Access Scope</label>
+                            <select id="k-scope">
+                                <option value="all">Unrestricted</option>
+                                <option value="number">/api/number</option>
+                                <option value="aadhar">/api/aadhar</option>
+                                <option value="upi">/api/upi</option>
+                                <option value="pan">/api/pan</option>
+                                <option value="veh2num">/api/veh2num</option>
+                                <option value="vehicle">/api/vehicle</option>
+                                <option value="tg">/api/tg</option>
+                                <option value="bomber">/api/bomber</option>
+                            </select>
+                        </div>
+                        <div class="input-group">
+                            <label>Duration (Days)</label>
+                            <input type="number" id="k-days" placeholder="0 = Lifetime">
+                        </div>
+                        <button class="btn-primary" style="height:42px; justify-content:center;" onclick="createKey()">Generate</button>
+                    </div>
+                </div>
+
+                <!-- Table -->
+                <div class="panel" style="padding:0; overflow:hidden;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Client Profile</th>
+                                <th>API Token</th>
+                                <th>Endpoint Scope</th>
+                                <th>Expiration</th>
+                                <th style="text-align:right; padding-right:24px;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="admin-table-body">
+                            <!-- JS Populated -->
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
-
-        <div class="generator-panel">
-            <div class="input-group">
-                <label>Client Label</label>
-                <input type="text" id="form-label" placeholder="e.g. VIP User">
-            </div>
-            <div class="input-group">
-                <label>Custom Alias (Optional)</label>
-                <input type="text" id="form-custom" placeholder="Auto-generated if empty">
-            </div>
-            <div class="input-group">
-                <label>Access Scope</label>
-                <select id="form-scope">
-                    <option value="all">Unrestricted (All Endpoints)</option>
-                    <option value="number">/api/number</option>
-                    <option value="aadhar">/api/aadhar</option>
-                    <option value="upi">/api/upi</option>
-                    <option value="pan">/api/pan</option>
-                    <option value="veh2num">/api/veh2num</option>
-                    <option value="vehicle">/api/vehicle</option>
-                    <option value="tg">/api/tg</option>
-                    <option value="bomber">/api/bomber</option>
-                </select>
-            </div>
-            <div class="input-group">
-                <label>Duration (Days)</label>
-                <input type="number" id="form-days" placeholder="0 = Lifetime">
-            </div>
-            <button class="btn-glow" style="padding:12px; height:45px;" onclick="generateKey()">Provision Key</button>
-        </div>
-
-        <div class="table-container">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Label Name</th>
-                        <th>API Token String</th>
-                        <th>Scope</th>
-                        <th>Expiration Date</th>
-                        <th style="text-align:right;">Actions</th>
-                    </tr>
-                </thead>
-                <tbody id="table-body">
-                    </tbody>
-            </table>
-        </div>
-
     </div>
 
     <script>
-        // AUTHENTICATION LOGIC
-        let adminPass = sessionStorage.getItem('mw_admin_pass') || '';
+        // --- VIEW ROUTING ---
+        let sessionToken = sessionStorage.getItem('mw_admin_pass') || '';
 
-        if (adminPass === 'kaddulele') {
-            document.getElementById('auth-gate').style.display = 'none';
+        if (sessionToken === 'kaddulele') {
+            showDashboard();
+        }
+
+        function showAuthModal() { document.getElementById('auth-modal').style.display = 'flex'; }
+        function hideAuthModal() { document.getElementById('auth-modal').style.display = 'none'; document.getElementById('auth-pass').value = ''; }
+        
+        function showDashboard() {
+            document.getElementById('landing-view').style.display = 'none';
+            document.getElementById('auth-modal').style.display = 'none';
+            document.getElementById('admin-view').style.display = 'block';
             fetchData();
         }
 
-        function handleEnter(e) { if (e.key === 'Enter') login(); }
-
-        async function login() {
-            const val = document.getElementById('auth-password').value;
+        async function attemptLogin() {
+            const val = document.getElementById('auth-pass').value;
             const res = await fetch('/api/admin/verify', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ password: val })
+                method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password: val })
             });
             if (res.ok) {
-                adminPass = val;
+                sessionToken = val;
                 sessionStorage.setItem('mw_admin_pass', val);
-                document.getElementById('auth-gate').style.display = 'none';
-                fetchData();
+                showDashboard();
             } else {
-                alert('Authentication Failed. Invalid terminal password.');
+                alert('Invalid Credentials.');
             }
         }
 
@@ -285,83 +310,66 @@
             window.location.reload();
         }
 
-        // DATA LOGIC
+        // --- DASHBOARD LOGIC ---
         async function fetchData() {
             try {
                 const res = await fetch('/api/admin/keys/list', {
-                    method: 'POST',
-                    headers: { 'x-admin-password': adminPass }
+                    method: 'POST', headers: { 'x-admin-password': sessionToken }
                 });
-                
-                if (!res.ok) return logout(); // Kick out if session is dead
-
+                if (!res.ok) return logout();
                 const data = await res.json();
-                const tbody = document.getElementById('table-body');
-                document.getElementById('total-keys-text').innerText = `Total Active Keys: ${data.length}`;
+                
+                document.getElementById('key-count').innerText = `Total Active Keys: ${data.length}`;
+                const tbody = document.getElementById('admin-table-body');
                 
                 if (data.length === 0) {
-                    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:50px; color:var(--text-muted);">No tokens provisioned in the database.</td></tr>`;
+                    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:40px; color:var(--text-muted);">Database is empty.</td></tr>`;
                     return;
                 }
 
                 tbody.innerHTML = data.map(item => `
                     <tr>
-                        <td style="font-weight:600; color:white;">${item.label}</td>
-                        <td><span class="badge-key">${item.key}</span></td>
-                        <td><span class="badge-scope">${item.allowedLookup}</span></td>
-                        <td style="color:var(--text-muted);">${item.expiresAt ? new Date(item.expiresAt).toLocaleDateString() : 'Lifetime Access'}</td>
-                        <td>
-                            <div class="actions">
-                                <button class="btn-icon" onclick="copyToClipboard('${item.key}')" title="Copy Key">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
-                                </button>
-                                <button class="btn-icon delete" onclick="deleteKey('${item.key}')" title="Revoke Key">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
-                                </button>
-                            </div>
+                        <td style="font-weight:600;">${item.label}</td>
+                        <td><span class="token-str">${item.key}</span></td>
+                        <td><span style="border:1px solid var(--border-color); padding:4px 8px; border-radius:4px; font-size:0.85rem;">${item.allowedLookup}</span></td>
+                        <td style="color:var(--text-muted); font-size:0.9rem;">${item.expiresAt ? new Date(item.expiresAt).toLocaleDateString() : 'Permanent'}</td>
+                        <td style="text-align:right; padding-right:24px;">
+                            <button class="btn-copy" onclick="navigator.clipboard.writeText('${item.key}');alert('Copied!')">Copy</button>
+                            <button class="btn-delete" onclick="deleteKey('${item.key}')">Revoke</button>
                         </td>
                     </tr>
                 `).reverse().join('');
-            } catch (err) {
-                console.error('Fetch error:', err);
-            }
+            } catch (e) { console.error(e); }
         }
 
-        async function generateKey() {
-            const label = document.getElementById('form-label').value;
-            const customKey = document.getElementById('form-custom').value;
-            const allowedLookup = document.getElementById('form-scope').value;
-            const daysValid = document.getElementById('form-days').value;
-
+        async function createKey() {
+            const payload = {
+                label: document.getElementById('k-label').value,
+                customKey: document.getElementById('k-custom').value,
+                allowedLookup: document.getElementById('k-scope').value,
+                daysValid: document.getElementById('k-days').value
+            };
             const res = await fetch('/api/admin/keys/create', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'x-admin-password': adminPass },
-                body: JSON.stringify({ label, customKey, allowedLookup, daysValid })
+                method: 'POST', headers: { 'Content-Type': 'application/json', 'x-admin-password': sessionToken },
+                body: JSON.stringify(payload)
             });
-
             const data = await res.json();
             if (data.error) return alert(data.error);
 
-            document.getElementById('form-label').value = '';
-            document.getElementById('form-custom').value = '';
-            document.getElementById('form-days').value = '';
+            document.getElementById('k-label').value = '';
+            document.getElementById('k-custom').value = '';
+            document.getElementById('k-days').value = '';
             fetchData();
         }
 
         async function deleteKey(key) {
-            if (confirm('Permanently revoke this API Key?')) {
+            if (confirm('Permanently revoke this key?')) {
                 await fetch('/api/admin/keys/revoke', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'x-admin-password': adminPass },
+                    method: 'POST', headers: { 'Content-Type': 'application/json', 'x-admin-password': sessionToken },
                     body: JSON.stringify({ keyToDelete: key })
                 });
                 fetchData();
             }
-        }
-
-        function copyToClipboard(text) {
-            navigator.clipboard.writeText(text);
-            alert('Token copied to clipboard!');
         }
     </script>
 </body>
